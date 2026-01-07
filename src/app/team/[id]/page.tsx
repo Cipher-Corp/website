@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { TeamMemberDetailClient } from "./client";
 
+// Force dynamic rendering - content can change anytime
+export const dynamic = "force-dynamic";
+
 interface Props {
     params: Promise<{ id: string }>;
 }
@@ -18,14 +21,4 @@ export default async function TeamMemberPage({ params }: Props) {
     }
 
     return <TeamMemberDetailClient member={member} />;
-}
-
-export async function generateStaticParams() {
-    const members = await prisma.teamMember.findMany({
-        select: { id: true },
-    });
-
-    return members.map((member) => ({
-        id: member.id,
-    }));
 }
