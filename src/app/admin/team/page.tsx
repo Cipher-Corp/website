@@ -118,15 +118,6 @@ export default function AdminTeamPage() {
         setError(null);
 
         try {
-            // Optimistic update
-            setMembers((prev) =>
-                prev.map((m) =>
-                    m.id === editingMember.id
-                        ? { ...m, ...formData }
-                        : m
-                )
-            );
-
             const response = await fetch(`/api/team/${editingMember.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -134,10 +125,16 @@ export default function AdminTeamPage() {
             });
 
             if (!response.ok) {
-                // Revert on error
-                await fetchMembers();
                 throw new Error("Failed to update team member");
             }
+
+            // Update local state with the actual response from server
+            const data = await response.json();
+            setMembers((prev) =>
+                prev.map((m) =>
+                    m.id === editingMember.id ? data.member : m
+                )
+            );
 
             addToast("Team member updated successfully", "success");
             closeForm();

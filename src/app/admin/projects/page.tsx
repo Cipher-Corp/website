@@ -113,15 +113,6 @@ export default function AdminProjectsPage() {
 
         try {
             if (editingProject) {
-                // Optimistic update for edit
-                setProjects((prev) =>
-                    prev.map((p) =>
-                        p.id === editingProject.id
-                            ? { ...p, ...formData }
-                            : p
-                    )
-                );
-
                 const response = await fetch(`/api/projects/${editingProject.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -134,23 +125,18 @@ export default function AdminProjectsPage() {
                 });
 
                 if (!response.ok) {
-                    // Revert on error
-                    await fetchProjects();
                     throw new Error("Failed to update project");
                 }
+
+                // Update local state with actual response from server
+                const data = await response.json();
+                setProjects((prev) =>
+                    prev.map((p) =>
+                        p.id === editingProject.id ? data.project : p
+                    )
+                );
                 addToast("Project updated successfully", "success");
             } else {
-                // Optimistic update for create
-                const tempId = `temp-${Date.now()}`;
-                const tempProject: Project = {
-                    id: tempId,
-                    ...formData,
-                    order: projects.length,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
-                setProjects((prev) => [...prev, tempProject]);
-
                 const response = await fetch("/api/projects", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -163,16 +149,12 @@ export default function AdminProjectsPage() {
                 });
 
                 if (!response.ok) {
-                    // Revert on error
-                    setProjects((prev) => prev.filter((p) => p.id !== tempId));
                     throw new Error("Failed to create project");
                 }
 
-                // Replace temp project with real one
+                // Add new project from server response
                 const data = await response.json();
-                setProjects((prev) =>
-                    prev.map((p) => (p.id === tempId ? data.project : p))
-                );
+                setProjects((prev) => [...prev, data.project]);
                 addToast("Project created successfully", "success");
             }
 
